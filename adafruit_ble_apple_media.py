@@ -42,6 +42,8 @@ import _bleio
 __version__ = "0.0.0-auto.0"
 __repo__ = "https://github.com/adafruit/Adafruit_CircuitPython_BLE_Apple_Media.git"
 
+# Disable protected access checks since our private classes are tightly coupled.
+# pylint: disable=protected-access
 
 class _RemoteCommand(ComplexCharacteristic):
     """Endpoint for sending commands to a media player. The value read will list all available
@@ -78,7 +80,7 @@ class _EntityUpdate(ComplexCharacteristic):
         return _bleio.PacketBuffer(bound_characteristic,
                                    buffer_size=8)
 
-class _EntityAttribute(Characteristic):
+class _EntityAttribute(Characteristic): # pylint: disable=too-few-public-methods
     """UTF-8 Encoded string characteristic."""
     uuid = VendorUUID("C6B2F38C-23AB-46D8-A6AB-A3A870BBD5D7")
 
@@ -91,15 +93,16 @@ class _MediaAttribute:
     def __init__(self, entity_id, attribute_id):
         self.key = (entity_id, attribute_id)
 
-    def _update(self, obj):
+    @staticmethod
+    def _update(obj):
         if not obj._buffer:
             obj._buffer = bytearray(128)
-        len = obj._entity_update.readinto(obj._buffer)
-        if len > 0:
-            if len < 4:
+        length_read = obj._entity_update.readinto(obj._buffer)
+        if length_read > 0:
+            if length_read < 4:
                 raise RuntimeError("packet too short")
             entity_id, attribute_id, flags = struct.unpack_from("<BBB", obj._buffer)
-            value = str(obj._buffer[3:len], "utf-8")
+            value = str(obj._buffer[3:length_read], "utf-8")
             obj._attribute_cache[(entity_id, attribute_id)] = value
 
     def __get__(self, obj, cls):
@@ -137,10 +140,16 @@ class _MediaAttributePlaybackInfo:
         return 0
 
 class UnsupportedCommand(Exception):
-    pass
+    """Raised when the command isn't available with current media player app."""
 
 class AppleMediaService(Service):
-    """View and control currently playing media. Unimplemented."""
+    """View and control currently playing media.
+
+    Exact functionality varies with different media apps. For example, Spotify will include the
+    album name and artist name in `track_title` when controlling playback on a remote device.
+    `artist` includes a description of the remote playback.
+
+    """
     uuid = VendorUUID("89D3502B-0F36-433A-8EF4-C502AD55F8DC")
 
     _remote_command = _RemoteCommand()
@@ -148,24 +157,41 @@ class AppleMediaService(Service):
     _entity_attribute = _EntityAttribute()
 
     player_name = _MediaAttribute(0, 0)
+    """Name of the media player app"""
     _playback_info = _MediaAttribute(0, 1)
     paused = _MediaAttributePlaybackState(0)
+    """True when playback is paused. False otherwise."""
     playing = _MediaAttributePlaybackState(1)
+    """True when playback is playing. False otherwise."""
     rewinding = _MediaAttributePlaybackState(2)
+    """True when playback is rewinding. False otherwise."""
     fast_forwarding = _MediaAttributePlaybackState(3)
+    """True when playback is fast-forwarding. False otherwise."""
     playback_rate = _MediaAttributePlaybackInfo(1)
+    """Playback rate as a decimal of normal speed."""
     elapsed_time = _MediaAttributePlaybackInfo(2)
+    """Time elapsed in the current track. Not updated as the track plays. Use (the amount of time
+       since read elapsed time) * `playback_rate` to estimate the current `elapsed_time`."""
     volume = _MediaAttribute(0, 2)
+    """Current volume"""
 
     queue_index = _MediaAttribute(1, 0)
+    """Current track's index in the queue."""
     queue_length = _MediaAttribute(1, 1)
+    """Count of tracks in the queue."""
     shuffle_mode = _MediaAttribute(1, 2)
+    """Current shuffle mode as an integer. Off (0), One (1), and All (2)"""
     repeat_mode = _MediaAttribute(1, 3)
+    """Current repeat mode as an integer. Off (0), One (1), and All (2)"""
 
     artist = _MediaAttribute(2, 0)
+    """Current track's artist name."""
     album = _MediaAttribute(2, 1)
+    """Current track's album name."""
     title = _MediaAttribute(2, 2)
+    """Current track's title."""
     duration = _MediaAttribute(2, 3)
+    """Current track's duration as a string."""
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -192,43 +218,57 @@ class AppleMediaService(Service):
         self._remote_command.write(self._cmd)
 
     def play(self):
+        """Plays the current track. Does nothing if already playing."""
         self._send_command(0)
 
     def pause(self):
+        """Pauses the current track. Does nothing if already paused."""
         self._send_command(1)
 
     def toggle_play_pause(self):
+        """Plays the current track if it is paused. Otherwise it pauses the track."""
         self._send_command(2)
 
     def next_track(self):
+        """Stops playing the current track and plays the next one."""
         self._send_command(3)
 
     def previous_track(self):
+        """Stops playing the current track and plays the previous track."""
         self._send_command(4)
 
     def volume_up(self):
+        """Increases the playback volume."""
         self._send_command(5)
 
     def volume_down(self):
+        """Decreases the playback volume."""
         self._send_command(6)
 
     def advance_repeat_mode(self):
+        """Advances the repeat mode. Modes are: Off, One and All"""
         self._send_command(7)
 
     def advance_shuffle_mode(self):
+        """Advances the shuffle mode. Modes are: Off, One and All"""
         self._send_command(8)
 
     def skip_forward(self):
+        """Skips forwards in the current track"""
         self._send_command(9)
 
     def skip_backward(self):
+        """Skips backwards in the current track"""
         self._send_command(10)
 
     def like_track(self):
+        """Likes the current track"""
         self._send_command(11)
 
     def dislike_track(self):
+        """Dislikes the current track"""
         self._send_command(12)
 
     def bookmark_track(self):
+        """Bookmarks the current track"""
         self._send_command(13)
