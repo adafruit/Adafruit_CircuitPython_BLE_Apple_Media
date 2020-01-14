@@ -148,7 +148,7 @@ class AppleMediaService(Service):
     """View and control currently playing media.
 
     Exact functionality varies with different media apps. For example, Spotify will include the
-    album name and artist name in `track_title` when controlling playback on a remote device.
+    album name and artist name in `title` when controlling playback on a remote device.
     `artist` includes a description of the remote playback.
 
     """
