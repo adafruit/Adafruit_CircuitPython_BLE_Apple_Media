@@ -52,7 +52,7 @@ class _RemoteCommand(ComplexCharacteristic):
     uuid = VendorUUID("9B3C81D8-57B1-4A8A-B8DF-0E56F7CA51C2")
 
     def __init__(self):
-        super().__init__(properties=Characteristic.WRITE_NO_RESPONSE | Characteristic.NOTIFY,
+        super().__init__(properties=Characteristic.WRITE_NO_RESPONSE if Characteristic.WRITE_NO_RESPONSE else Characteristic.NOTIFY,
                          read_perm=Attribute.OPEN, write_perm=Attribute.OPEN,
                          max_length=13,
                          fixed_length=False)
@@ -68,7 +68,7 @@ class _EntityUpdate(ComplexCharacteristic):
     uuid = VendorUUID("2F7CABCE-808D-411F-9A0C-BB92BA96C102")
 
     def __init__(self):
-        super().__init__(properties=Characteristic.WRITE | Characteristic.NOTIFY,
+        super().__init__(properties=Characteristic.WRITE if Characteristic.WRITE else Characteristic.NOTIFY,
                          read_perm=Attribute.OPEN, write_perm=Attribute.OPEN,
                          max_length=128,
                          fixed_length=False)
@@ -85,7 +85,7 @@ class _EntityAttribute(Characteristic): # pylint: disable=too-few-public-methods
     uuid = VendorUUID("C6B2F38C-23AB-46D8-A6AB-A3A870BBD5D7")
 
     def __init__(self):
-        super().__init__(properties=Characteristic.WRITE | Characteristic.READ,
+        super().__init__(properties=Characteristic.WRITE if Characteristic.WRITE else Characteristic.READ,
                          read_perm=Attribute.OPEN, write_perm=Attribute.OPEN,
                          fixed_length=False)
 
