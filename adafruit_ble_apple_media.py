@@ -32,12 +32,12 @@ https://developer.apple.com/library/archive/documentation/CoreBluetooth/Referenc
 import struct
 import time
 
+import _bleio
+
 from adafruit_ble.attributes import Attribute
 from adafruit_ble.characteristics import Characteristic, ComplexCharacteristic
 from adafruit_ble.uuid import VendorUUID
 from adafruit_ble.services import Service
-
-import _bleio
 
 __version__ = "0.0.0-auto.0"
 __repo__ = "https://github.com/adafruit/Adafruit_CircuitPython_BLE_Apple_Media.git"
@@ -207,7 +207,7 @@ class AppleMediaService(Service):
     def _send_command(self, command_id):
         if not self._command_buffer:
             self._command_buffer = bytearray(13)
-        i = self._remote_command.readinto(self._command_buffer)
+        i = self._remote_command.readinto(self._command_buffer) # pylint: disable=no-member
         if i > 0:
             self._supported_commands = list(self._command_buffer[:i])
         if command_id not in self._supported_commands:
@@ -217,7 +217,7 @@ class AppleMediaService(Service):
         if not self._cmd:
             self._cmd = bytearray(1)
         self._cmd[0] = command_id
-        self._remote_command.write(self._cmd)
+        self._remote_command.write(self._cmd) # pylint: disable=no-member
 
     def play(self):
         """Plays the current track. Does nothing if already playing."""
