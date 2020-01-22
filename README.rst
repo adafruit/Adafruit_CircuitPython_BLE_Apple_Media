@@ -28,11 +28,6 @@ This is easily achieved by downloading
 
 Installing from PyPI
 =====================
-.. note:: This library is not available on PyPI yet. Install documentation is included
-   as a standard element. Stay tuned for PyPI availability!
-
-.. todo:: Remove the above note if PyPI version is/will be available at time of release.
-   If the library is not planned for PyPI, remove the entire 'Installing from PyPI' section.
 
 On supported GNU/Linux systems like the Raspberry Pi, you can install the driver locally `from
 PyPI <https://pypi.org/project/adafruit-circuitpython-ble_apple_media/>`_. To install for current user:
@@ -59,7 +54,50 @@ To install in a virtual environment in your current project:
 Usage Example
 =============
 
-.. todo:: Add a quick, simple example. It and other examples should live in the examples folder and be included in docs/examples.rst.
+.. code-block:: python
+
+    import adafruit_ble
+    from adafruit_ble.advertising.standard import SolicitServicesAdvertisement
+    from adafruit_ble_apple_media import AppleMediaService
+
+    radio = adafruit_ble.BLERadio()
+    a = SolicitServicesAdvertisement()
+    a.solicited_services.append(AppleMediaService)
+    radio.start_advertising(a)
+
+    while not radio.connected:
+        pass
+
+    print("connected")
+
+    known_notifications = set()
+
+    i = 0
+    while radio.connected:
+        for connection in radio.connections:
+            if not connection.paired:
+                connection.pair()
+                print("paired")
+
+            ams = connection[AppleMediaService]
+            print("App:", ams.player_name)
+            print("Title:", ams.title)
+            print("Album:", ams.album)
+            print("Artist:", ams.artist)
+            if ams.playing:
+                print("Playing")
+            elif ams.paused:
+                print("Paused")
+
+            if i > 3:
+                ams.toggle_play_pause()
+                i = 0
+        print()
+        time.sleep(3)
+        i += 1
+
+    print("disconnected")
+
 
 Contributing
 ============

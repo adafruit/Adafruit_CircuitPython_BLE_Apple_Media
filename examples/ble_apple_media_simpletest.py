@@ -8,7 +8,8 @@ import adafruit_ble
 from adafruit_ble.advertising.standard import SolicitServicesAdvertisement
 from adafruit_ble_apple_media import AppleMediaService
 
-radio = adafruit_ble.BLERadio()
+# PyLint can't find BLERadio for some reason so special case it here.
+radio = adafruit_ble.BLERadio() # pylint: disable=no-member
 a = SolicitServicesAdvertisement()
 a.solicited_services.append(AppleMediaService)
 radio.start_advertising(a)
