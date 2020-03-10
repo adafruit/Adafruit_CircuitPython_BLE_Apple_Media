@@ -116,9 +116,13 @@ class _MediaAttribute:
                 raise RuntimeError("packet too short")
             # Even though flags is currently unused, if it were removed, it would cause there to be
             # too many values to unpack which would raise a ValueError
-            entity_id, attribute_id, flags = struct.unpack_from(
+            (
+                entity_id,
+                attribute_id,
+                flags,
+            ) = struct.unpack_from(  # pylint: disable=unused-variable
                 "<BBB", obj._buffer
-            )  # pylint: disable=unused-variable
+            )
             value = str(obj._buffer[3:length_read], "utf-8")
             obj._attribute_cache[(entity_id, attribute_id)] = value
 
