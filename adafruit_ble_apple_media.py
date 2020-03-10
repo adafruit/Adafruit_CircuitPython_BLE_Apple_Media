@@ -119,8 +119,8 @@ class _MediaAttribute:
             (
                 entity_id,
                 attribute_id,
-                flags,
-            ) = struct.unpack_from(  # pylint: disable=unused-variable
+                flags, # pylint: disable=unused-variable
+            ) = struct.unpack_from(
                 "<BBB", obj._buffer
             )
             value = str(obj._buffer[3:length_read], "utf-8")
