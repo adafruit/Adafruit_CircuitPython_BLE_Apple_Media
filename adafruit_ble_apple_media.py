@@ -119,10 +119,8 @@ class _MediaAttribute:
             (
                 entity_id,
                 attribute_id,
-                flags, # pylint: disable=unused-variable
-            ) = struct.unpack_from(
-                "<BBB", obj._buffer
-            )
+                flags,  # pylint: disable=unused-variable
+            ) = struct.unpack_from("<BBB", obj._buffer)
             value = str(obj._buffer[3:length_read], "utf-8")
             obj._attribute_cache[(entity_id, attribute_id)] = value
 
@@ -231,9 +229,9 @@ class AppleMediaService(Service):
     def _send_command(self, command_id):
         if not self._command_buffer:
             self._command_buffer = bytearray(13)
-        i = self._remote_command.readinto(
+        i = self._remote_command.readinto(  # pylint: disable=no-member
             self._command_buffer
-        )  # pylint: disable=no-member
+        )
         if i > 0:
             self._supported_commands = list(self._command_buffer[:i])
         if command_id not in self._supported_commands:
