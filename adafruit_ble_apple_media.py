@@ -45,49 +45,62 @@ __repo__ = "https://github.com/adafruit/Adafruit_CircuitPython_BLE_Apple_Media.g
 # Disable protected access checks since our private classes are tightly coupled.
 # pylint: disable=protected-access
 
+
 class _RemoteCommand(ComplexCharacteristic):
     """Endpoint for sending commands to a media player. The value read will list all available
 
        commands."""
+
     uuid = VendorUUID("9B3C81D8-57B1-4A8A-B8DF-0E56F7CA51C2")
 
     def __init__(self):
-        super().__init__(properties=Characteristic.WRITE_NO_RESPONSE | Characteristic.NOTIFY,
-                         read_perm=Attribute.OPEN, write_perm=Attribute.OPEN,
-                         max_length=13,
-                         fixed_length=False)
+        super().__init__(
+            properties=Characteristic.WRITE_NO_RESPONSE | Characteristic.NOTIFY,
+            read_perm=Attribute.OPEN,
+            write_perm=Attribute.OPEN,
+            max_length=13,
+            fixed_length=False,
+        )
 
     def bind(self, service):
         """Binds the characteristic to the given Service."""
         bound_characteristic = super().bind(service)
-        return _bleio.PacketBuffer(bound_characteristic,
-                                   buffer_size=1)
+        return _bleio.PacketBuffer(bound_characteristic, buffer_size=1)
+
 
 class _EntityUpdate(ComplexCharacteristic):
     """UTF-8 Encoded string characteristic."""
+
     uuid = VendorUUID("2F7CABCE-808D-411F-9A0C-BB92BA96C102")
 
     def __init__(self):
-        super().__init__(properties=Characteristic.WRITE | Characteristic.NOTIFY,
-                         read_perm=Attribute.OPEN, write_perm=Attribute.OPEN,
-                         max_length=128,
-                         fixed_length=False)
-
+        super().__init__(
+            properties=Characteristic.WRITE | Characteristic.NOTIFY,
+            read_perm=Attribute.OPEN,
+            write_perm=Attribute.OPEN,
+            max_length=128,
+            fixed_length=False,
+        )
 
     def bind(self, service):
         """Binds the characteristic to the given Service."""
         bound_characteristic = super().bind(service)
-        return _bleio.PacketBuffer(bound_characteristic,
-                                   buffer_size=8)
+        return _bleio.PacketBuffer(bound_characteristic, buffer_size=8)
 
-class _EntityAttribute(Characteristic): # pylint: disable=too-few-public-methods
+
+class _EntityAttribute(Characteristic):  # pylint: disable=too-few-public-methods
     """UTF-8 Encoded string characteristic."""
+
     uuid = VendorUUID("C6B2F38C-23AB-46D8-A6AB-A3A870BBD5D7")
 
     def __init__(self):
-        super().__init__(properties=Characteristic.WRITE | Characteristic.READ,
-                         read_perm=Attribute.OPEN, write_perm=Attribute.OPEN,
-                         fixed_length=False)
+        super().__init__(
+            properties=Characteristic.WRITE | Characteristic.READ,
+            read_perm=Attribute.OPEN,
+            write_perm=Attribute.OPEN,
+            fixed_length=False,
+        )
+
 
 class _MediaAttribute:
     def __init__(self, entity_id, attribute_id):
@@ -103,7 +116,9 @@ class _MediaAttribute:
                 raise RuntimeError("packet too short")
             # Even though flags is currently unused, if it were removed, it would cause there to be
             # too many values to unpack which would raise a ValueError
-            entity_id, attribute_id, flags = struct.unpack_from("<BBB", obj._buffer) # pylint: disable=unused-variable
+            entity_id, attribute_id, flags = struct.unpack_from(
+                "<BBB", obj._buffer
+            )  # pylint: disable=unused-variable
             value = str(obj._buffer[3:length_read], "utf-8")
             obj._attribute_cache[(entity_id, attribute_id)] = value
 
@@ -114,12 +129,13 @@ class _MediaAttribute:
             for k in obj._attribute_cache:
                 if k[0] == self.key[0] and k[1] not in siblings:
                     siblings.append(k[1])
-            buf = struct.pack("<B" + "B"*len(siblings), self.key[0], *siblings)
+            buf = struct.pack("<B" + "B" * len(siblings), self.key[0], *siblings)
             obj._entity_update.write(buf)
             obj._attribute_cache[self.key] = None
             time.sleep(0.05)
             self._update(obj)
         return obj._attribute_cache[self.key]
+
 
 class _MediaAttributePlaybackState:
     def __init__(self, playback_value):
@@ -131,6 +147,7 @@ class _MediaAttributePlaybackState:
             return int(info.split(",")[0]) == self._playback_value
         return False
 
+
 class _MediaAttributePlaybackInfo:
     def __init__(self, position):
         self._position = position
@@ -141,8 +158,10 @@ class _MediaAttributePlaybackInfo:
             return float(info.split(",")[self._position])
         return 0
 
+
 class UnsupportedCommand(Exception):
     """Raised when the command isn't available with current media player app."""
+
 
 class AppleMediaService(Service):
     """View and control currently playing media.
@@ -152,6 +171,7 @@ class AppleMediaService(Service):
     `artist` includes a description of the remote playback.
 
     """
+
     uuid = VendorUUID("89D3502B-0F36-433A-8EF4-C502AD55F8DC")
 
     _remote_command = _RemoteCommand()
@@ -207,7 +227,9 @@ class AppleMediaService(Service):
     def _send_command(self, command_id):
         if not self._command_buffer:
             self._command_buffer = bytearray(13)
-        i = self._remote_command.readinto(self._command_buffer) # pylint: disable=no-member
+        i = self._remote_command.readinto(
+            self._command_buffer
+        )  # pylint: disable=no-member
         if i > 0:
             self._supported_commands = list(self._command_buffer[:i])
         if command_id not in self._supported_commands:
@@ -217,7 +239,7 @@ class AppleMediaService(Service):
         if not self._cmd:
             self._cmd = bytearray(1)
         self._cmd[0] = command_id
-        self._remote_command.write(self._cmd) # pylint: disable=no-member
+        self._remote_command.write(self._cmd)  # pylint: disable=no-member
 
     def play(self):
         """Plays the current track. Does nothing if already playing."""
