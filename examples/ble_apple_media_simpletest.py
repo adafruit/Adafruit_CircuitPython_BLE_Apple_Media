@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2021 ladyada for Adafruit Industries
+# SPDX-License-Identifier: MIT
+
 """
 This example solicits that apple devices that provide notifications connect to it, initiates
 pairing, prints existing notifications and then prints any new ones as they arrive.
