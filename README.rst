@@ -99,6 +99,11 @@ Usage Example
     print("disconnected")
 
 
+Documentation
+=============
+
+API documentation for this library can be found on `Read the Docs <https://circuitpython.readthedocs.io/projects/ble_apple_media/en/latest/>`_.
+
 Contributing
 ============
 
