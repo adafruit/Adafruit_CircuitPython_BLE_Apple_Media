@@ -95,7 +95,7 @@ class _MediaAttribute:
             obj._buffer = bytearray(128)
         length_read = obj._entity_update.readinto(obj._buffer)
         if length_read > 0:
-            if length_read < 4:
+            if length_read < 3:
                 raise RuntimeError("packet too short")
             # Even though flags is currently unused, if it were removed, it would cause there to be
             # too many values to unpack which would raise a ValueError
