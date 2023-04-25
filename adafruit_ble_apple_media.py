@@ -15,7 +15,7 @@ https://developer.apple.com/library/archive/documentation/CoreBluetooth/Referenc
 try:
     from typing import Union, Type
 
-    AppleMediaServiceType = Union("AppleMediaService", Type["AppleMediaService"])
+    AppleMediaServiceType = Union["AppleMediaService", Type["AppleMediaService"]]
 except ImportError:
     pass
 
