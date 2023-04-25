@@ -14,6 +14,8 @@ https://developer.apple.com/library/archive/documentation/CoreBluetooth/Referenc
 """
 try:
     from typing import Union, Type
+
+    AppleMediaServiceType = Union("AppleMediaService", Type["AppleMediaService"])
 except ImportError:
     pass
 
@@ -32,8 +34,6 @@ __repo__ = "https://github.com/adafruit/Adafruit_CircuitPython_BLE_Apple_Media.g
 
 # Disable protected access checks since our private classes are tightly coupled.
 # pylint: disable=protected-access
-
-AppleMediaServiceType = Union("AppleMediaService", Type["AppleMediaService"])
 
 
 class _RemoteCommand(ComplexCharacteristic):
