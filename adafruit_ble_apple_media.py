@@ -12,6 +12,11 @@ Documented by Apple here:
 https://developer.apple.com/library/archive/documentation/CoreBluetooth/Reference/AppleMediaService_Reference/Introduction/Introduction.html#//apple_ref/doc/uid/TP40014716-CH2-SW1
 
 """
+try:
+    from typing import Union, Type
+except ImportError:
+    pass
+
 import struct
 import time
 
@@ -28,6 +33,8 @@ __repo__ = "https://github.com/adafruit/Adafruit_CircuitPython_BLE_Apple_Media.g
 # Disable protected access checks since our private classes are tightly coupled.
 # pylint: disable=protected-access
 
+AppleMediaServiceType = Union("AppleMediaService", Type["AppleMediaService"])
+
 
 class _RemoteCommand(ComplexCharacteristic):
     """Endpoint for sending commands to a media player. The value read will list all available
@@ -36,7 +43,7 @@ class _RemoteCommand(ComplexCharacteristic):
 
     uuid = VendorUUID("9B3C81D8-57B1-4A8A-B8DF-0E56F7CA51C2")
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(
             properties=Characteristic.WRITE_NO_RESPONSE | Characteristic.NOTIFY,
             read_perm=Attribute.OPEN,
@@ -45,7 +52,7 @@ class _RemoteCommand(ComplexCharacteristic):
             fixed_length=False,
         )
 
-    def bind(self, service):
+    def bind(self, service: Service) -> _bleio.PacketBuffer:
         """Binds the characteristic to the given Service."""
         bound_characteristic = super().bind(service)
         return _bleio.PacketBuffer(bound_characteristic, buffer_size=1)
@@ -56,7 +63,7 @@ class _EntityUpdate(ComplexCharacteristic):
 
     uuid = VendorUUID("2F7CABCE-808D-411F-9A0C-BB92BA96C102")
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(
             properties=Characteristic.WRITE | Characteristic.NOTIFY,
             read_perm=Attribute.OPEN,
@@ -65,7 +72,7 @@ class _EntityUpdate(ComplexCharacteristic):
             fixed_length=False,
         )
 
-    def bind(self, service):
+    def bind(self, service: Service) -> _bleio.PacketBuffer:
         """Binds the characteristic to the given Service."""
         bound_characteristic = super().bind(service)
         return _bleio.PacketBuffer(bound_characteristic, buffer_size=8)
@@ -76,7 +83,7 @@ class _EntityAttribute(Characteristic):  # pylint: disable=too-few-public-method
 
     uuid = VendorUUID("C6B2F38C-23AB-46D8-A6AB-A3A870BBD5D7")
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(
             properties=Characteristic.WRITE | Characteristic.READ,
             read_perm=Attribute.OPEN,
@@ -86,11 +93,11 @@ class _EntityAttribute(Characteristic):  # pylint: disable=too-few-public-method
 
 
 class _MediaAttribute:
-    def __init__(self, entity_id, attribute_id):
+    def __init__(self, entity_id: int, attribute_id: int) -> None:
         self.key = (entity_id, attribute_id)
 
     @staticmethod
-    def _update(obj):
+    def _update(obj: AppleMediaServiceType) -> None:
         if not obj._buffer:
             obj._buffer = bytearray(128)
         length_read = obj._entity_update.readinto(obj._buffer)
@@ -107,7 +114,7 @@ class _MediaAttribute:
             value = str(obj._buffer[3:length_read], "utf-8")
             obj._attribute_cache[(entity_id, attribute_id)] = value
 
-    def __get__(self, obj, cls):
+    def __get__(self, obj: AppleMediaServiceType, cls) -> str:
         self._update(obj)
         if self.key not in obj._attribute_cache:
             siblings = [self.key[1]]
@@ -123,10 +130,10 @@ class _MediaAttribute:
 
 
 class _MediaAttributePlaybackState:
-    def __init__(self, playback_value):
+    def __init__(self, playback_value: int):
         self._playback_value = playback_value
 
-    def __get__(self, obj, cls):
+    def __get__(self, obj: AppleMediaServiceType, cls) -> bool:
         info = obj._playback_info
         if info:
             return int(info.split(",")[0]) == self._playback_value
@@ -134,14 +141,14 @@ class _MediaAttributePlaybackState:
 
 
 class _MediaAttributePlaybackInfo:
-    def __init__(self, position):
+    def __init__(self, position: int) -> None:
         self._position = position
 
-    def __get__(self, obj, cls):
+    def __get__(self, obj: AppleMediaServiceType, cls) -> float:
         info = obj._playback_info
         if info:
             return float(info.split(",")[self._position])
-        return 0
+        return 0.0
 
 
 class UnsupportedCommand(Exception):
@@ -200,7 +207,7 @@ class AppleMediaService(Service):
     duration = _MediaAttribute(2, 3)
     """Current track's duration as a string."""
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
         self._buffer = None
         self._cmd = None
@@ -209,7 +216,7 @@ class AppleMediaService(Service):
         self._supported_commands = []
         self._command_buffer = None
 
-    def _send_command(self, command_id):
+    def _send_command(self, command_id: bytearray) -> None:
         if not self._command_buffer:
             self._command_buffer = bytearray(13)
         i = self._remote_command.readinto(  # pylint: disable=no-member
@@ -226,58 +233,58 @@ class AppleMediaService(Service):
         self._cmd[0] = command_id
         self._remote_command.write(self._cmd)  # pylint: disable=no-member
 
-    def play(self):
+    def play(self) -> None:
         """Plays the current track. Does nothing if already playing."""
         self._send_command(0)
 
-    def pause(self):
+    def pause(self) -> None:
         """Pauses the current track. Does nothing if already paused."""
         self._send_command(1)
 
-    def toggle_play_pause(self):
+    def toggle_play_pause(self) -> None:
         """Plays the current track if it is paused. Otherwise it pauses the track."""
         self._send_command(2)
 
-    def next_track(self):
+    def next_track(self) -> None:
         """Stops playing the current track and plays the next one."""
         self._send_command(3)
 
-    def previous_track(self):
+    def previous_track(self) -> None:
         """Stops playing the current track and plays the previous track."""
         self._send_command(4)
 
-    def volume_up(self):
+    def volume_up(self) -> None:
         """Increases the playback volume."""
         self._send_command(5)
 
-    def volume_down(self):
+    def volume_down(self) -> None:
         """Decreases the playback volume."""
         self._send_command(6)
 
-    def advance_repeat_mode(self):
+    def advance_repeat_mode(self) -> None:
         """Advances the repeat mode. Modes are: Off, One and All"""
         self._send_command(7)
 
-    def advance_shuffle_mode(self):
+    def advance_shuffle_mode(self) -> None:
         """Advances the shuffle mode. Modes are: Off, One and All"""
         self._send_command(8)
 
-    def skip_forward(self):
+    def skip_forward(self) -> None:
         """Skips forwards in the current track"""
         self._send_command(9)
 
-    def skip_backward(self):
+    def skip_backward(self) -> None:
         """Skips backwards in the current track"""
         self._send_command(10)
 
-    def like_track(self):
+    def like_track(self) -> None:
         """Likes the current track"""
         self._send_command(11)
 
-    def dislike_track(self):
+    def dislike_track(self) -> None:
         """Dislikes the current track"""
         self._send_command(12)
 
-    def bookmark_track(self):
+    def bookmark_track(self) -> None:
         """Bookmarks the current track"""
         self._send_command(13)
