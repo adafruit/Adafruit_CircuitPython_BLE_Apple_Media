@@ -12,8 +12,9 @@ Documented by Apple here:
 https://developer.apple.com/library/archive/documentation/CoreBluetooth/Reference/AppleMediaService_Reference/Introduction/Introduction.html#//apple_ref/doc/uid/TP40014716-CH2-SW1
 
 """
+
 try:
-    from typing import Union, Type
+    from typing import Type, Union
 
     AppleMediaServiceType = Union["AppleMediaService", Type["AppleMediaService"]]
 except ImportError:
@@ -23,17 +24,15 @@ import struct
 import time
 
 import _bleio
-
 from adafruit_ble.attributes import Attribute
 from adafruit_ble.characteristics import Characteristic, ComplexCharacteristic
-from adafruit_ble.uuid import VendorUUID
 from adafruit_ble.services import Service
+from adafruit_ble.uuid import VendorUUID
 
 __version__ = "0.0.0+auto.0"
 __repo__ = "https://github.com/adafruit/Adafruit_CircuitPython_BLE_Apple_Media.git"
 
 # Disable protected access checks since our private classes are tightly coupled.
-# pylint: disable=protected-access
 
 
 class _RemoteCommand(ComplexCharacteristic):
@@ -78,7 +77,7 @@ class _EntityUpdate(ComplexCharacteristic):
         return _bleio.PacketBuffer(bound_characteristic, buffer_size=8)
 
 
-class _EntityAttribute(Characteristic):  # pylint: disable=too-few-public-methods
+class _EntityAttribute(Characteristic):
     """UTF-8 Encoded string characteristic."""
 
     uuid = VendorUUID("C6B2F38C-23AB-46D8-A6AB-A3A870BBD5D7")
@@ -109,7 +108,7 @@ class _MediaAttribute:
             (
                 entity_id,
                 attribute_id,
-                flags,  # pylint: disable=unused-variable
+                flags,  # noqa: F841
             ) = struct.unpack_from("<BBB", obj._buffer)
             value = str(obj._buffer[3:length_read], "utf-8")
             obj._attribute_cache[(entity_id, attribute_id)] = value
@@ -219,9 +218,7 @@ class AppleMediaService(Service):
     def _send_command(self, command_id: bytearray) -> None:
         if not self._command_buffer:
             self._command_buffer = bytearray(13)
-        i = self._remote_command.readinto(  # pylint: disable=no-member
-            self._command_buffer
-        )
+        i = self._remote_command.readinto(self._command_buffer)
         if i > 0:
             self._supported_commands = list(self._command_buffer[:i])
         if command_id not in self._supported_commands:
@@ -231,7 +228,7 @@ class AppleMediaService(Service):
         if not self._cmd:
             self._cmd = bytearray(1)
         self._cmd[0] = command_id
-        self._remote_command.write(self._cmd)  # pylint: disable=no-member
+        self._remote_command.write(self._cmd)
 
     def play(self) -> None:
         """Plays the current track. Does nothing if already playing."""
